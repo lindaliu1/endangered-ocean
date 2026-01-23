@@ -1,0 +1,19 @@
+.DS_Store
+
+# env
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+.next/
+out/
+dist/
+
+# misc
+pipeline/out/
+timeline.md
