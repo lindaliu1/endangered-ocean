@@ -26,6 +26,7 @@ NOAA_CACHE_ENABLED = os.getenv("NOAA_CACHE", "1").lower() in {"1", "true", "yes"
 class SpeciesItem:
     source: str
     source_record_id: str
+    detail_url: str
     common_name: str
     scientific_name: str
     status: str
@@ -466,6 +467,7 @@ def scrape() -> list[SpeciesItem]:
             SpeciesItem(
                 source=species_list_item["source"],
                 source_record_id=species_list_item["source_record_id"],
+                detail_url=detail_url,
                 common_name=_normalize_common_name(species_list_item["common_name"]),
                 scientific_name=extract_scientific_name(soup),
                 status=extract_status(soup),
