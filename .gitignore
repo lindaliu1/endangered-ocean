@@ -16,4 +16,5 @@ dist/
 
 # misc
 pipeline/out/
-timeline.md
+pipeline/.cache/
+housekeeping/
