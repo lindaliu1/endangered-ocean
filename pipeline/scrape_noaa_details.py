@@ -41,6 +41,7 @@ class SpeciesItem:
 def _normalize_space(s: str) -> str:
     return " ".join(s.split()).strip()
 
+# caching helpers
 def _cache_path_for(source_record_id: str) -> Path:
     return CACHE_DIR / f"{source_record_id}.html"
 
@@ -59,7 +60,6 @@ def _get_detail_html(session: requests.Session, url: str, source_record_id: str)
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(html, encoding="utf-8")
 
-    # be polite to NOAA
     if REQUEST_DELAY_S > 0:
         time.sleep(REQUEST_DELAY_S)
 
@@ -104,13 +104,11 @@ def _to_meters(value: float, unit: str) -> float:
         return value * 0.3048
     return value
 
-
 def _parse_explicit_depth_range_m(depth_notes: str) -> tuple[int | None, int | None]:
-    """parse an explicit depth range from depth_notes
-
+    """
+    parse an explicit depth range from depth_notes
     returns (min_depth_m, max_depth_m) as ints (rounded). if a single explicit
     depth is found, returns (depth_m, depth_m). if nothing is found, returns (None, None).
-
     notes:
     - requires depth context words (depth/deep/depths) *within the same sentence* to reduce false positives.
     - skips sentences likely referring to body length.
@@ -206,15 +204,12 @@ def _parse_explicit_depth_range_m(depth_notes: str) -> tuple[int | None, int | N
 
     return None, None
 
-
 def _infer_depth_bucket_range_m(depth_notes: str) -> tuple[int | None, int | None, str]:
     """infer depth range from keywords when explicit depth is missing.
-
     buckets:
     - shallow: 0–20m
     - continental shelf: 20–200m
     - deep: 200–1000m
-
     returns (min_depth_m, max_depth_m, bucket_name).
     """
     if not depth_notes:
@@ -282,7 +277,6 @@ def extract_depth_range(depth_notes: str) -> tuple[int | None, int | None]:
     inferred_min, inferred_max, _bucket = _infer_depth_bucket_range_m(depth_notes)
     return inferred_min, inferred_max
 
-
 def define_depth_source(depth_notes: str, min_depth_m: int | None, max_depth_m: int | None) -> str:
     if min_depth_m is None and max_depth_m is None:
         return "unknown"
@@ -342,7 +336,6 @@ def extract_threats(soup: BeautifulSoup) -> list[str]:
                     seen.add(key)
                     threats.append(p)
             return threats
-
     return []
 
 def normalize_threats(threats: list[str]) -> list[str]:
@@ -431,7 +424,6 @@ def normalize_threats(threats: list[str]) -> list[str]:
 
     return normalized_threat_list
 
-
 def scrape() -> list[SpeciesItem]:
     session = requests.Session()
     session.headers.update(
@@ -440,7 +432,6 @@ def scrape() -> list[SpeciesItem]:
             "Accept": "text/html,application/xhtml+xml",
         }
     )
-
     results: list[SpeciesItem] = []
 
     # for each detail url from the json list, scrape the details page
@@ -479,7 +470,6 @@ def scrape() -> list[SpeciesItem]:
                 threats=normalized_threats,
             )
         )
-
     return results
 
 def main() -> None:

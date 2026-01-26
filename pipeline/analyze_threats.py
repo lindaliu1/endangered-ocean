@@ -126,11 +126,9 @@ def extract_normalized_threats():
                 "threats": threats,
                 "normalized": normalized_threat_list
             })
-    
     with OUT_PATH_NORMALIZED.open("w", encoding="utf-8") as f:
         json.dump(normalized_threats, f, indent=2)
         
-
 if __name__ == "__main__":
     isolate_threats()
     extract_normalized_threats()

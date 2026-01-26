@@ -16,7 +16,6 @@ LIST_URL = (
 
 OUT_PATH = Path("pipeline/out/noaa_list.json")
 
-
 @dataclass
 class SpeciesListItem:
     source: str
@@ -24,16 +23,13 @@ class SpeciesListItem:
     common_name: str
     detail_url: str
 
-
 def _normalize_space(s: str) -> str:
     return " ".join(s.split()).strip()
-
 
 def _slug_from_detail_url(detail_url: str) -> str:
     path = urlparse(detail_url).path.rstrip("/")
     slug = path.split("/")[-1]
     return slug or detail_url
-
 
 def scrape() -> list[SpeciesListItem]:
     session = requests.Session()
@@ -74,9 +70,7 @@ def scrape() -> list[SpeciesListItem]:
                 detail_url=detail_url,
             )
         )
-
     return results
-
 
 def main() -> None:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -91,7 +85,6 @@ def main() -> None:
     if items_sorted:
         print("Example:")
         print(json.dumps(asdict(items_sorted[0]), indent=2, ensure_ascii=False))
-
 
 if __name__ == "__main__":
     main()
