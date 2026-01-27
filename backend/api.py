@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Any, Optional
 from urllib.parse import urlparse
 
+import hashlib
+import os
+from pathlib import Path
+
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,10 +44,10 @@ def debug_db_url() -> dict[str, str]:
 @app.get("/api/species", response_model=list[SpeciesOut])
 def list_species(
     status: Optional[Status] = Query(
-        default=None, description="Filter by conservation status"
+        default=None, description="filter by conservation status"
     ),
     threat: Optional[str] = Query(
-        default=None, description='Filter by threat name (e.g. "climate change")'
+        default=None, description='filter by threat name (e.g. "climate change")'
     ),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -111,7 +115,7 @@ def list_threats() -> list[ThreatOut]:
 
     return [ThreatOut(id=int(r[0]), name=str(r[1])) for r in rows]
 
-# ---- proxy image_url image, remove background and convert to png ----
+# ---- helpers to proxy image_url image, remove background and convert to png ----
 ALLOWED_IMAGE_HOSTS = {
     "www.fisheries.noaa.gov",
     "fisheries.noaa.gov",
@@ -156,13 +160,41 @@ def _fetch_remote_image_bytes(url: str) -> tuple[bytes, str]:
 
     return resp.content, content_type
 
+# ---- caching bg-remove images for faster performance ----
+_BG_REMOVE_CACHE_DIR = Path("backend/.cache/bg_remove")
+_BG_REMOVE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
 # images with background removed, ready to be pixelated on the frontend
+# add cache to make loading faster after first request
 @app.get("/api/image/bg-remove")
 def bg_remove_image(
-    url: str = Query(..., description="NOAA image URL to background-remove"),
+    url: str = Query(..., description="NOAA image url to background-remove"),
+    cache: bool = Query(
+        True, description="use cached PNG if available (set to false to force recompute)"
+    ),
 ) -> Response:
     # fetch NOAA image and return a png with transparent background
     safe_url = _validate_noaa_image_url(url)
+
+    url_hash = hashlib.sha256(safe_url.encode("utf-8")).hexdigest()
+    cache_path = _BG_REMOVE_CACHE_DIR / f"{url_hash}.png"
+
+    # serve from cache
+    if cache and cache_path.exists():
+        out_bytes = cache_path.read_bytes()
+        etag = f'W/"{url_hash}"'
+        # 7 days cache
+        return Response(
+            content=out_bytes,
+            media_type="image/png",
+            headers={
+                "Cache-Control": "public, max-age=604800, immutable",
+                "ETag": etag,
+                "X-Cache": "HIT",
+            },
+        )
+    
+    # if not in cache, fetch and process
     img_bytes, _content_type = _fetch_remote_image_bytes(safe_url)
     try:
         out_bytes = remove(img_bytes)
@@ -170,8 +202,24 @@ def bg_remove_image(
         # rembg can fail on unusual inputs
         raise HTTPException(status_code=500, detail="background removal failed")
 
-    # rembg returns a PNG byte stream (with alpha) by default.
-    return Response(content=out_bytes, media_type="image/png")
+    # cache write
+    try:
+        tmp_path = cache_path.with_suffix(".tmp")
+        tmp_path.write_bytes(out_bytes)
+        os.replace(tmp_path, cache_path)
+    except Exception:
+        pass
+
+    etag = f'W/"{url_hash}"'
+    return Response(
+        content=out_bytes,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=604800, immutable",
+            "ETag": etag,
+            "X-Cache": "MISS",
+        },
+    )
 
 """
 @app.get("/api/image")
