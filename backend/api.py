@@ -11,7 +11,12 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from rembg import remove
+
+# rembg try catch exception if deployment fails
+try:
+    from rembg import remove as rembg_remove  # type: ignore
+except Exception:  # pragma: no cover
+    rembg_remove = None
 
 from backend.db import db_connection, get_database_url
 from backend.queries import GET_SPECIES_SQL, LIST_SPECIES_SQL, LIST_THREATS_SQL
@@ -28,7 +33,6 @@ else:
     ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://endangered-ocean.vercel.app/",
     ]
 
 app.add_middleware(
@@ -181,6 +185,14 @@ def bg_remove_image(
         True, description="use cached PNG if available (set to false to force recompute)"
     ),
 ) -> Response:
+    if rembg_remove is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "bg-remove unavailable: rembg/onnxruntime not installed in this environment"
+            ),
+        )
+
     # fetch NOAA image and return a png with transparent background
     safe_url = _validate_noaa_image_url(url)
 
@@ -205,7 +217,7 @@ def bg_remove_image(
     # if not in cache, fetch and process
     img_bytes, _content_type = _fetch_remote_image_bytes(safe_url)
     try:
-        out_bytes = remove(img_bytes)
+        out_bytes = rembg_remove(img_bytes)  # type: ignore[misc]
     except Exception:
         # rembg can fail on unusual inputs
         raise HTTPException(status_code=500, detail="background removal failed")
