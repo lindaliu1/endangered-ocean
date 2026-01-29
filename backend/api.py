@@ -19,22 +19,7 @@ from backend.schemas import SpeciesOut, Status, ThreatOut
 
 app = FastAPI(title="Endangered Ocean API", version="0.1.0")
 
-<<<<<<< HEAD
-# CORS
-_allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
-if _allowed_origins_env:
-    ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
-else:
-    # Local Next.js dev defaults
-    ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://endangered-ocean.vercel.app/",
-    ]
-
-=======
 # CORS for local Next.js dev.
->>>>>>> parent of 3666916 (prepare for backend deployment via render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

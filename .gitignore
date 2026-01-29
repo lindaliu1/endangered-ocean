@@ -17,4 +17,5 @@ dist/
 # misc
 pipeline/out/
 pipeline/.cache/
+backend/.cache/
 housekeeping/
