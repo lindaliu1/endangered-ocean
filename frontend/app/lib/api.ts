@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+	process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 /**
  * Build a full API URL for the FastAPI service.
@@ -9,22 +9,22 @@ export const API_BASE_URL =
  *   apiUrl("/api/species", { status: "Endangered" })
  */
 export function apiUrl(
-  path: string,
-  query?: Record<string, string | number | boolean | null | undefined>
+	path: string,
+	query?: Record<string, string | number | boolean | null | undefined>,
 ): string {
-  const base = API_BASE_URL.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
+	const base = API_BASE_URL.replace(/\/+$/, "");
+	const p = path.startsWith("/") ? path : `/${path}`;
 
-  const url = new URL(`${base}${p}`);
+	const url = new URL(`${base}${p}`);
 
-  if (query) {
-    for (const [k, v] of Object.entries(query)) {
-      if (v === null || v === undefined || v === "") continue;
-      url.searchParams.set(k, String(v));
-    }
-  }
+	if (query) {
+		for (const [k, v] of Object.entries(query)) {
+			if (v === null || v === undefined || v === "") continue;
+			url.searchParams.set(k, String(v));
+		}
+	}
 
-  return url.toString();
+	return url.toString();
 }
 
 /**
@@ -33,20 +33,30 @@ export function apiUrl(
  * - sets JSON headers by default
  */
 export async function apiFetch(
-  path: string,
-  options: RequestInit = {},
-  query?: Record<string, string | number | boolean | null | undefined>
+	path: string,
+	options: RequestInit = {},
+	query?: Record<string, string | number | boolean | null | undefined>,
 ): Promise<Response> {
-  const headers = new Headers(options.headers);
-  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+	const headers = new Headers(options.headers);
+	if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
-  // Only set Content-Type automatically when a body is present and caller hasn't set it.
-  if (options.body !== undefined && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
+	// Only set Content-Type automatically when a body is present and caller hasn't set it.
+	if (options.body !== undefined && !headers.has("Content-Type")) {
+		headers.set("Content-Type", "application/json");
+	}
 
-  return fetch(apiUrl(path, query), {
-    ...options,
-    headers,
-  });
+	return fetch(apiUrl(path, query), {
+		...options,
+		headers,
+	});
+}
+
+/**
+ * Build a same-origin URL for a background-removed NOAA image (PNG with alpha).
+ *
+ * The backend endpoint proxies + background-removes, which also avoids CORS issues
+ * when drawing to a <canvas> for pixelation.
+ */
+export function bgRemovedImageUrl(noaaImageUrl: string): string {
+	return apiUrl("/api/image/bg-remove", { url: noaaImageUrl });
 }
