@@ -25,7 +25,9 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Custom cursor for the ocean area */
+/* Custom cursor for the ocean area 
 .ocean {
 	cursor: url("/cursor.png") 8 8, auto !important;
 }
+
+*/

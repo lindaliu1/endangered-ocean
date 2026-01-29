@@ -95,7 +95,6 @@ export default function PixelateImage({
 				}
 				style={{ width, height }}
 				aria-label={alt}
-				title={error}
 			>
 				(image)
 			</div>
@@ -109,7 +108,6 @@ export default function PixelateImage({
 			style={{ width, height }}
 			role="img"
 			aria-label={alt}
-			title={alt}
 		/>
 	);
 }
